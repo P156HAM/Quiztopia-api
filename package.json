@@ -12,6 +12,7 @@
   "dependencies": {
     "@middy/core": "^4.6.4",
     "bcryptjs": "^2.4.3",
+    "joi": "^17.10.2",
     "jsonwebtoken": "^9.0.2",
     "uuid": "^9.0.1"
   },

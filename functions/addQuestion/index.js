@@ -1,27 +1,24 @@
-const { db } = require("../../services/db");
 import { validateToken } from "../../middlewares/auth";
+import { validateQuestionInput } from "../../middlewares/bodyValidation";
 import { sendResponse } from "../../responses/index.js";
 import { sendError } from "../../responses/index.js";
+import { addQuestion, findQuizById, findQuizByName } from "./helpers";
 const middy = require('@middy/core');
 const { v4: uuidv4 } = require('uuid');
 
 exports.handler = middy()
     .handler(async(event) => {
         try {
+
+            if(!event?.userId || (event?.error && event?.error === "401")) {
+                return sendError(401, { message: "Please provide a valid token."})
+            } else if (event.error) {
+                return sendError(event.error.statusCode, { message: event.error.message, details: event.error.details });
+            }
+
             const { question, answer, quizName } = JSON.parse(event.body);
-            
-            // scaning the database to find the specifik quiz to add the question to. 
-            const quizQueryResult = await db.query({
-                TableName: "quiztopia-db",
-                IndexName: "GSI1-name",
-                KeyConditionExpression: "#name = :name",
-                ExpressionAttributeNames: {
-                    "#name": "name"
-                },
-                ExpressionAttributeValues: {
-                    ":name": quizName
-                },
-            }).promise();
+            // query the database to find the specifik quiz to add the question to. 
+            const quizQueryResult = await findQuizByName(quizName)
 
             if (quizQueryResult.Items.length === 0) {
                 // Quiz not found, return an error response
@@ -30,38 +27,10 @@ exports.handler = middy()
             
             const quizId = quizQueryResult.Items[0].SK;
             const questionId = uuidv4();
-            const addedQuestion = {
-                PK: quizId,
-                SK: `question#${questionId}`,
-                entityType: "Question",
-                question: question,
-                answer: answer,
-                location: {
-                    "longitude": "11.555.66.11",
-                    "latitude": "22.445.645"
-                }
-            }
-
-            // Adding the question to the database.
-            await db.put({
-                TableName: "quiztopia-db",
-                Item: addedQuestion
-            }).promise(); 
-
+            await addQuestion(quizId, questionId, question, answer);
 
             // Query for all questions related to the quiz
-            const quiz = await db.query({
-                TableName: "quiztopia-db",
-                KeyConditionExpression: "#PK = :PK AND begins_with(#SK, :SK)",
-                ExpressionAttributeNames: {
-                    "#PK": "PK",
-                    "#SK": "SK"
-                },
-                ExpressionAttributeValues: {
-                    ":PK": quizId,
-                    ":SK": "question#"
-                }
-            }).promise();
+            const quiz = await findQuizById(quizId);
 
             return sendResponse(200, { success: true, quiz });
         } catch (error) {
@@ -69,4 +38,5 @@ exports.handler = middy()
         }
     })
     .use(validateToken)
+    .use(validateQuestionInput)
 

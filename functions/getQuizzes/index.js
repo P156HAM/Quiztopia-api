@@ -1,18 +1,16 @@
 import { sendResponse } from "../../responses/index.js";
 import { sendError } from "../../responses/index.js";
-import { findQuiz } from "./helpers.js";
+import { getQuizzes } from "./helpers.js";
 
 exports.handler = async(event) => {
-    try {
-        const { userId, quizId } = event.pathParameters;
-        const quiz = await findQuiz(userId, quizId)
-
-        if (!quiz) {
+    try {  
+        const quizzes = await getQuizzes();
+        if (!quizzes) {
             return sendError(401, { sucess: false, message: 'No quizzes to show, please deploy a quiz.' })
         } else {
-            return sendResponse(200, { sucess: true, quiz })
+            return sendResponse(200, { sucess: true, quizzes })
         }
     } catch (error) {
-        return sendError(401, { message: error.message })
+        return sendError(400, { message: error.message })
     }
 }

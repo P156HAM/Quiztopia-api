@@ -30,11 +30,18 @@ functions:
           path: '/api/login'
           method: POST       
   
+  getQuizzes:
+    handler: functions/getQuizzes/index.handler
+    events: 
+      - httpApi:
+          path: '/api/quiz'
+          method: GET 
+
   getQuiz:
     handler: functions/getQuiz/index.handler
     events: 
       - httpApi:
-          path: '/api/quiz'
+          path: '/api/quiz/{userId}/{quizId}'
           method: GET 
 
   addQuiz: 
@@ -50,6 +57,27 @@ functions:
       - httpApi:
           path: '/api/quiz/question'
           method: POST
+  
+  deleteQuiz: 
+    handler: functions/deleteQuiz/index.handler
+    events:
+      - httpApi:
+          path: '/api/quiz/{quizId}'
+          method: DELETE
+
+  addPoints: 
+    handler: functions/addPoints/index.handler
+    events:
+      - httpApi:
+          path: '/api/leaderbord/{quizId}'
+          method: POST
+
+  getTable: 
+    handler: functions/getTable/index.handler
+    events:
+      - httpApi:
+          path: '/api/leaderbord/{quizId}'
+          method: GET
 
 resources:
   Resources:
@@ -69,16 +97,14 @@ resources:
             AttributeType: S
           - AttributeName: userId
             AttributeType: S   
-          - AttributeName: entityType
-            AttributeType: S 
           - AttributeName: name
             AttributeType: S 
         GlobalSecondaryIndexes:
-          - IndexName: GSI1-userId
+          - IndexName: GSI1-quiz
             KeySchema:
-              - AttributeName: userId
+              - AttributeName: name
                 KeyType: HASH
-              - AttributeName: entityType
+              - AttributeName: userId
                 KeyType: RANGE
             Projection:
               ProjectionType: ALL

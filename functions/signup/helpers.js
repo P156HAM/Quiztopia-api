@@ -20,3 +20,19 @@ export async function bcryptPassword(password, userName) {
         throw new Error("User already exists");
     }
 }
+
+export async function addUser(userID, userName, hashedPassword) {
+    const newUser = {
+        PK: `u#${userID}`,
+        entityType: "User",
+        userName: userName,
+        password: hashedPassword,
+    }
+
+    await db.put({
+        TableName: "users-db",
+        Item: newUser
+    }).promise();
+
+    return newUser
+}
